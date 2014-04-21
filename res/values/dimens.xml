@@ -131,4 +131,7 @@
 
     <!-- Height of translucent shadow effect -->
     <dimen name="translucent_shadow_height">2dp</dimen>
+
+    <!-- Height of the in-call card -->
+    <dimen name="incoming_call_card_height">112dip</dimen>
 </resources>
