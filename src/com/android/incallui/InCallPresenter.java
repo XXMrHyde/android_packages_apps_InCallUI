@@ -21,7 +21,10 @@ import com.google.android.collect.Sets;
 import com.google.common.base.Preconditions;
 
 import android.content.Context;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.os.PowerManager;
+import android.provider.Settings;
 
 import com.android.services.telephony.common.Call;
 import com.android.services.telephony.common.Call.Capabilities;
@@ -52,9 +55,11 @@ public class InCallPresenter implements CallList.Listener {
     private Context mContext;
     private CallList mCallList;
     private InCallActivity mInCallActivity;
+    private InCallCardActivity mInCallCardActivity;
     private InCallState mInCallState = InCallState.NO_CALLS;
     private ProximitySensor mProximitySensor;
     private boolean mServiceConnected = false;
+    private boolean mCallUiInBackground = true;
 
     /**
      * Is true when the activity has been previously started. Some code needs to know not just if
@@ -129,12 +134,22 @@ public class InCallPresenter implements CallList.Listener {
     }
 
     private void attemptFinishActivity() {
+        // Finish our presenter card in all cases, we won't need it anymore whatever might
+        // happen.
+        if (mInCallCardActivity != null) {
+            mInCallCardActivity.finish();
+        }
+
         final boolean doFinish = (mInCallActivity != null && isActivityStarted());
         Log.i(this, "Hide in call UI: " + doFinish);
 
         if (doFinish) {
             mInCallActivity.finish();
         }
+    }
+
+    public void setCardActivity(InCallCardActivity inCallCardActivity) {
+        mInCallCardActivity = inCallCardActivity;
     }
 
     /**
@@ -263,7 +278,7 @@ public class InCallPresenter implements CallList.Listener {
 
         // Disable notification shade and soft navigation buttons
         if (newState.isIncoming()) {
-            CallCommandClient.getInstance().setSystemBarNavigationEnabled(false);
+            CallCommandClient.getInstance().setSystemBarNavigationEnabled(true);
         }
 
         for (IncomingCallListener listener : mIncomingCallListeners) {
@@ -640,7 +655,39 @@ public class InCallPresenter implements CallList.Listener {
             mInCallActivity = null;
         }
 
-        mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList);
+        boolean nonIntrusiveDisabled = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.NON_INTRUSIVE_INCALL, 8) == 0;
+
+        final PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+        // If the screen is on, we'll prefer to not interrupt the user too much and slide in a card
+        if (pm.isScreenOn() && !nonIntrusiveDisabled) {
+            Intent intent = new Intent(mContext, InCallCardActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            mContext.startActivity(intent);
+        } else {
+            mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList, false);
+            mCallUiInBackground = mStatusBarNotifier.getIsCallUiInBackground();
+        }
+    }
+
+    /**
+     * Starts the incoming call Ui immediately, bypassing the card UI
+     */
+    public void startIncomingCallUi(InCallState inCallState, boolean isCallUiInBackground) {
+        mCallUiInBackground = isCallUiInBackground;
+        mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(inCallState, mCallList, isCallUiInBackground);
+    }
+
+    /**
+     * Starts the incoming call Ui immediately used by the incoming call
+     * notification sent from framework's notification mechanism
+     */
+    public void startIncomingCallUi() {
+        // Update the notification and UI this time with fullscreen intent
+        // First cancel the actual notification and then update
+        mStatusBarNotifier.cancelInCall();
+        mStatusBarNotifier.updateNotificationAndLaunchIncomingCallUi(
+                       InCallState.INCALL, mCallList, false);
     }
 
     /**
