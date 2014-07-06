@@ -67,7 +67,7 @@ public class InCallCardActivity extends Activity implements GlowPadWrapper.Answe
         mNameTextView = (TextView) findViewById(R.id.txt_contact_name);
         mContactImage = (ImageView) findViewById(R.id.img_contact);
 
-        ImageButton fullscreenUI = (ImageButton) findViewById(R.id.fullscreen_ui);
+        ImageView fullscreenUI = (ImageView) findViewById(R.id.fullscreen_ui);
         fullscreenUI.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -77,7 +77,7 @@ public class InCallCardActivity extends Activity implements GlowPadWrapper.Answe
             }
         });
 
-        ImageButton dismissUI = (ImageButton) findViewById(R.id.dismiss_ui);
+        ImageView dismissUI = (ImageView) findViewById(R.id.dismiss_ui);
         dismissUI.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
