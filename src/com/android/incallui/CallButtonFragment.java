@@ -42,6 +42,8 @@ import android.widget.PopupMenu.OnMenuItemClickListener;
 import com.android.contacts.common.util.MaterialColorMapUtils;
 import com.android.contacts.common.util.MaterialColorMapUtils.MaterialPalette;
 
+import com.android.internal.telephony.util.BlacklistUtils;
+
 /**
  * Fragment for call control buttons
  */
@@ -61,10 +63,12 @@ public class CallButtonFragment
     private ImageButton mMergeButton;
     private CompoundButton mPauseVideoButton;
     private ImageButton mOverflowButton;
+    private ImageButton mMoreMenuButton;
 
     private PopupMenu mAudioModePopup;
     private boolean mAudioModePopupVisible;
     private PopupMenu mOverflowPopup;
+    private PopupMenu mMoreMenu;
 
     private int mPrevAudioMode = 0;
 
@@ -120,6 +124,24 @@ public class CallButtonFragment
         mPauseVideoButton.setOnClickListener(this);
         mOverflowButton = (ImageButton) parent.findViewById(R.id.overflowButton);
         mOverflowButton.setOnClickListener(this);
+
+
+        mMoreMenuButton = (ImageButton) parent.findViewById(R.id.moreMenuButton);
+        if (mMoreMenuButton != null) {
+            boolean blacklistEnabled = BlacklistUtils.isBlacklistEnabled(getActivity());
+            if (blacklistEnabled) {
+                mMoreMenuButton.setOnClickListener(this);
+                final ContextThemeWrapper contextWrapper = new ContextThemeWrapper(getActivity(),
+                        R.style.InCallPopupMenuStyle);
+                mMoreMenu = new PopupMenu(contextWrapper, mMoreMenuButton /* anchorView */);
+                mMoreMenu.getMenuInflater().inflate(R.menu.incall_more_menu, mMoreMenu.getMenu());
+                mMoreMenu.setOnMenuItemClickListener(this);
+
+                mMoreMenuButton.setOnTouchListener(mMoreMenu.getDragToOpenListener());
+            } else {
+                mMoreMenuButton.setVisibility(View.GONE);
+            }
+        }
 
         return parent;
     }
@@ -189,6 +211,9 @@ public class CallButtonFragment
                 break;
             case R.id.overflowButton:
                 mOverflowPopup.show();
+                break;
+            case R.id.moreMenuButton:
+                mMoreMenu.show();
                 break;
             default:
                 isClickHandled = false;
@@ -329,6 +354,7 @@ public class CallButtonFragment
         mMergeButton.setEnabled(isEnabled);
         mPauseVideoButton.setEnabled(isEnabled);
         mOverflowButton.setEnabled(isEnabled);
+        mMoreMenuButton.setEnabled(isEnabled);
     }
 
     @Override
@@ -524,6 +550,9 @@ public class CallButtonFragment
             case R.id.audio_mode_bluetooth:
                 mode = AudioState.ROUTE_BLUETOOTH;
                 break;
+            case R.id.menu_add_to_blacklist:
+                getPresenter().blacklistClicked(getActivity());
+                return true;
             default:
                 Log.e(this, "onMenuItemClick:  unexpected View ID " + item.getItemId()
                         + " (MenuItem = '" + item + "')");

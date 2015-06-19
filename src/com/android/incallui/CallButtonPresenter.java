@@ -16,7 +16,9 @@
 
 package com.android.incallui;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.telecom.AudioState;
 import android.telecom.InCallService.VideoCall;
@@ -28,6 +30,8 @@ import com.android.incallui.InCallPresenter.InCallState;
 import com.android.incallui.InCallPresenter.InCallStateListener;
 import com.android.incallui.InCallPresenter.IncomingCallListener;
 import com.android.incallui.InCallPresenter.InCallDetailsListener;
+
+import com.android.internal.telephony.util.BlacklistUtils;
 
 import java.util.Objects;
 
@@ -242,6 +246,31 @@ public class CallButtonPresenter extends Presenter<CallButtonPresenter.CallButto
                 VideoProfile.VideoState.AUDIO_ONLY, VideoProfile.QUALITY_DEFAULT);
         videoCall.sendSessionModifyRequest(videoProfile);
     }
+
+    public void blacklistClicked(final Context context) {
+        if (mCall == null) {
+            return;
+        }
+
+        final String number = mCall.getNumber();
+        final String message = context.getString(R.string.blacklist_dialog_message, number);
+
+        new AlertDialog.Builder(context)
+            .setTitle(R.string.blacklist_dialog_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.pause_prompt_yes, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Log.d(this, "hanging up due to blacklist: " + mCall.getId());
+                    TelecomAdapter.getInstance().disconnectCall(mCall.getId());
+                    BlacklistUtils.addOrUpdate(context, mCall.getNumber(),
+                        BlacklistUtils.BLOCK_CALLS, BlacklistUtils.BLOCK_CALLS);
+                }
+            })
+            .setNegativeButton(R.string.pause_prompt_no, null)
+            .show();
+    }
+
 
     public void showDialpadClicked(boolean checked) {
         Log.v(this, "Show dialpad " + String.valueOf(checked));
