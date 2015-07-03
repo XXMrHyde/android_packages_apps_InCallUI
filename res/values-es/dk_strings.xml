@@ -12,12 +12,12 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Text for the onscreen "MoreMenu" button -->
-    <string name="onscreenMoreMenuText">More menu</string> <!-- Needs translation -->
+    <string name="onscreenMoreMenuText">Ampliar menú</string>
 
     <!-- Text for the onscreen "Blacklist" button -->
-    <string name="onscreenBlacklistText">Blacklist</string> <!-- Needs translation -->
+    <string name="onscreenBlacklistText">Lista negra</string>
 
     <!-- Blacklist confirmation dialog -->
-    <string name="blacklist_dialog_title">Add to blacklist</string> <!-- Needs translation -->
-    <string name="blacklist_dialog_message">Future calls from <xliff:g id="number">%s</xliff:g> will be blocked</string> <!-- Needs translation -->
+    <string name="blacklist_dialog_title">Añadir a la lista negra</string>
+    <string name="blacklist_dialog_message">Futuras llamadas del número <xliff:g id="number">%s</xliff:g> serán bloqueadas</string>
 </resources>
